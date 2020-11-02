@@ -1,0 +1,18 @@
+<!--miniprogram/pages/a_homepage/homepage.wxml-->
+<view class="page">
+<form class="search-container" catchsubmit="onSubmit">
+  <input class="search-input" name="input" placeholder="请输入股票名或股票代码" formType="submit" bindinput="onChangeInput" bindconfirm="onSubmit"></input>
+  <button formType="submit" class="search-button" style="width:40px;"><image src="../../images/searchicon.png"></image></button>
+</form>
+
+<view class="search-history">
+历史记录
+<br></br>
+<view wx:for="{{searchHistory}}">
+  <text>{{item}}</text>
+</view>
+<button bindtap="clearHistory" type="primary">清空历史记录</button>
+</view>
+
+<mp-tabbar></mp-tabbar>
+</view>

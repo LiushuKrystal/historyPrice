@@ -1,0 +1,18 @@
+<!--pages/detailComponent/detailComponent.wxml-->
+<view class="detailContainer">
+  <view class="goodsContent">
+    <image src="{{item.image}}" style="width:100px;height:100px;"></image>
+    <view class="goodsDescription">
+      <view class="goods-name">{{item.name}}</view>
+    </view>
+  </view>
+  <view class="price">
+    <view class="price-title">价格走势</view>
+    <view class="price-chart">
+      <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" class="ec-style"></ec-canvas>
+    </view>
+    <view class="timeTabContainer">
+      <view class="timeTab" wx:for="{{tabList}}" wx:key="index" data-index="{{index}}" bindtap="timeTabClick">{{item}}</view>
+    </view>
+  </view>
+</view>

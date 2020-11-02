@@ -1,0 +1,30 @@
+/* miniprogram/pages/a_homepage/homepage.wxss */
+.search-container{
+  margin:10px;
+}
+.search-input{
+  /* box-sizing: border-box;/*border-box表明宽度包括border和padding
+  width:100%; */
+  border:rgba(0,0,0,0.2) solid 1px;
+  border-radius:10px;
+  padding-left:10px;
+  display:inline-block;
+  width:80%;
+  vertical-align: baseline;
+}
+.search-button{
+  display:inline-block;
+  width:25px;
+  height:25px;
+  padding:0;
+}
+.search-button image{
+  height: 25px;
+  width:25px;
+}
+.search-history{
+  margin-top:20px;
+  margin-left:10px;
+  display:flex;
+  flex-direction:column;
+}

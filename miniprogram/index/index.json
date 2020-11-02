@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "homepage":"/pages/homepage/homepage",
+    "help":"/pages/homepage/help"
+  }
+}
