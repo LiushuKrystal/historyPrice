@@ -1,7 +1,7 @@
 #这个文件是flask后端，用来路由请求的
 from flask import Flask, request
 import getdata
-
+import baostockapi
 app=Flask(__name__)
 
 @app.route('/',methods=['POST'])
@@ -13,24 +13,25 @@ def index():
             'msg':'请求参数类型不是json',
             'data':None,
         }  
-    #判断searchKey字段是否存在于请求参数中
+    #解析json数据，依然是json格式的，网络上传递的json数据的关键字都是字符串型而不是变量，所以需要通过字符串引用
     p=request.get_json()
-    if 'searchKey' not in p.keys():
+    if 'searchObj' not in p.keys():
         return {
             'code':10001,
             'msg':'字段不存在',
             'data':None
         }
     #判断字段是否为空
-    if p['searchKey']=='':
+    if not p['searchObj']:
         return {
             'code':10001,
             'msg':'字段非法',
             'data':None
         }
-    searchKey=p['searchKey']
+    searchObj=p['searchObj']
     #获取股票历史价格
-    json_data=getdata.get_data(searchKey=searchKey)
+    json_data=baostockapi.getdata(searchObj['searchKey'],searchObj['startDate'],searchObj['endDate'],searchObj['frequency'],searchObj['adjustFlag'])
+    print(json_data)
     #获取失败
     if json_data is None:
         return{
@@ -39,6 +40,7 @@ def index():
             'data':None
         }
     #获取成功
+    #dataframe类型的变量不能被序列化为json字符串
     return {
         'code':0,
         'msg':'请求成功',

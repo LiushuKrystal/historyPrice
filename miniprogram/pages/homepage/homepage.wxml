@@ -8,7 +8,7 @@
 <view class="search-history">
 历史记录
 <br></br>
-<view wx:for="{{searchHistory}}">
+<view wx:for="{{searchHistory}}" wx:key="index" data-index="{{index}}" bindtap="onSubmitFromHistory">
   <text>{{item}}</text>
 </view>
 <button bindtap="clearHistory" type="primary">清空历史记录</button>

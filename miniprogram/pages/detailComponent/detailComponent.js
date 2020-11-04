@@ -1,15 +1,18 @@
 // pages/detailComponent/detailComponent.js
 import * as echarts from '../../ec-canvas/echarts';
 const moment = require('../../utils/moment.min.js');
-function getOption(paramdataset){
+//echart为k线图规定了数据格式，是二维数组，四个值依次标识如下含义[open, close, lowest, highest] （即：[开盘值, 收盘值, 最低值, 最高值]）
+function getOption(dataset){
   //定义图表
-  const length=paramdataset.date.length;
+  const length=dataset.values.length;
+  const upColor='#ec0000';
+  const upBorderColor = '#8A0000';
+  const downColor = '#00da3c';
+  const downBorderColor = '#008F28';
+
   let options={
     title:{
       show:false,
-    },
-    dataset:{
-      source: paramdataset
     },
     grid:{
       //show:true
@@ -38,10 +41,11 @@ function getOption(paramdataset){
     },
     xAxis:{
       type:'category',
+      data:dataset.categoryData,
       axisLabel:{
         formatter:function(value){
           let d=value.split('-');
-          if(moment(paramdataset.date[0]).format('YYYY')==moment(paramdataset.date[length-1]).format('YYYY')){
+          if(moment(dataset.categoryData[0]).format('YYYY')==moment(dataset.categoryData[length-1]).format('YYYY')){
             d=d[1]+'-'+d[2]//只保留月-日
           }
           else d=d[0]+'-'+d[1]+'-'+d[2];
@@ -58,16 +62,31 @@ function getOption(paramdataset){
     yAxis:{
       type:'value',
       min:function(value){
-        return Math.floor(value.min-5)
+        return Math.floor(value.min-0.5)
       },
       max:function(value){
-        return Math.ceil(value.max+5)
+        return Math.ceil(value.max+0.5)
       },
     },
-    series:[{
-      type:'line',
-      smooth:true,
-    }]
+    series:[
+      {
+        name:"K线",
+        type:'candlestick',
+        data:dataset.values,
+        itemStyle:{
+          color:upColor,
+          color0:downColor,
+          borderColor:upBorderColor,
+          borderColor0:downBorderColor
+        },
+        markPoint:{
+
+        },
+        markLine:{
+
+        }
+      }
+  ]
   }
   return options;
 }
@@ -86,14 +105,10 @@ Component({
     ec:{
       lazyLoad:true//置为true后可以延迟加载图表
     },
-    searchKey:"",
+    searchObj:{},
     tabList:["近1月","近3月","近6月","近1年","近3年"],
     tabActive:0,
-    item:{},//商品的价格list
-    dataset:{
-      date:[],
-      price:[]
-    }
+    dataset:[],
   },
 
   /**
@@ -166,14 +181,18 @@ Component({
       wx.showLoading({
         title: '查询中...',
       })
-      let that=this;
       if(options.searchKey){
-        //从路径参数获取searchKey
-        let searchKey=decodeURIComponent(options.searchKey);//解码url
-        console.log(searchKey)
-        that.setData({
-          searchKey:searchKey
+        //从路径参数获取查询用的参数
+        let searchObj={};
+        searchObj.searchKey=decodeURIComponent(options.searchKey);//解码url
+        searchObj.startDate=decodeURIComponent(options.startDate);
+        searchObj.endDate=decodeURIComponent(options.endDate);
+        searchObj.frequency=decodeURIComponent(options.frequency);
+        searchObj.adjustFlag=decodeURIComponent(options.adjustFlag);
+        this.setData({
+          searchObj:searchObj
         })
+        console.log(searchObj);
       }
       else{
         console.log("error");
@@ -188,36 +207,38 @@ Component({
     },
     async spiderapi(){
       //请求爬虫数据接口
-      let res=await new Promise((resolve,reject)=>wx.request({//箭头函数的this指向它的直接上层，这里是Promise实例对象
+      let res=await new Promise((resolve,reject)=>wx.request({//箭头函数的this指向它的直接上层，也就是调用spiderapi的component对象
         //服务端地址
         url:'http://localhost:5000/',
         method:'POST',
         data:{
-          searchKey:this.data.searchKey,//将传入的参数作为请求参数
+          searchObj:this.data.searchObj,//将传入的参数作为请求参数
         },
         success:res=>resolve(res),
         fail:err=>reject(err),
       }))
-      console.log(res.data);
-      return res;
+      if(res.data.code!=0) console.log("请求失败"); 
+      return res.data.data;
     },
-    constructDataFromSpider(res){
-      if(res.data.code==0&&res.data.data.list_data!=[]){
-        console.log('请求成功且返回数组不为空');
+    constructDataFromSpider(responseData){
+      if(responseData.length!=0){
+        console.log('返回数组不为空');
         //请求成功
-        that.setData({
-          item:res.data.data.list_data
-        })
-        let dataset=[];
-        res.data.data.list_data.forEach(item=>{
-          let array=[];
-          array.push(item.date);
-          array.push((item.trade_money/item.trade_num/100).toFixed(2));
-          dataset.push(array);
-        })
-        dataset=dataset.reverse();
-        console.log(dataset);
-        return dataset;
+        let categoryData=[];
+        let values=[];
+        //按开盘、收盘、最低、最高调整数组中值的顺序
+        for(let i=0;i<responseData.length;i++){
+          categoryData.push(responseData[i].splice(0,1)[0]);
+          responseData[i].splice(0,1);
+          let element=[responseData[i].splice(0,1)[0]];
+          element=element.concat(responseData[i].splice(0,3).reverse());
+          values.push(element);
+        }
+        let result={};
+        result.categoryData=categoryData;
+        result.values=values;
+        console.log('构造的数组',result);
+        return result;
     }
    },
     setHistoryList(){
@@ -225,12 +246,12 @@ Component({
         let hl=wx.getStorageSync('history_list');
         if(hl){//任意对象，除了null以外转换成Boolean类型都应该是true
           let picked_in_hl=hl.some(item=>{
-            return item===this.data.searchKey;
+            return item===this.data.searchObj.searchKey;
           })
           if(!picked_in_hl){
             console.log('进入set')
-            console.log(that.data.searchKey);
-            hl.push(that.data.searchKey);
+            console.log(this.data.searchObj.searchKey);
+            hl.push(this.data.searchObj.searchKey);
             console.log('添加元素后的数组：');
             console.log(hl);
             try{
@@ -253,7 +274,8 @@ Component({
       }
     },
     async renderResult(){
-      let dataset=this.fetchLocal();//获取到符合格式要求的数组
+      let responseData=await this.spiderapi();//获取到数据，未经加工的原始返回数据
+      responseData=this.constructDataFromSpider(responseData);
       let that=this;
 
       let chart=await new Promise(resolve=>{
@@ -271,7 +293,9 @@ Component({
       })
       that.chart=chart;
       //用构造的数据渲染图表
-      that.chart.setOption(getOption(dataset));
+      console.log("传给getOption函数的数据:",responseData);
+      that.chart.setOption(getOption(responseData));
+      this.setHistoryList();
     },
     fetchLocal(){
       let obj=wx.getFileSystemManager().readFileSync(wx.env.USER_DATA_PATH+'/stockdata.json','utf-8');//注意和readfile的区别，readfilesync是一个同步接口，参数是字符串而不是对象

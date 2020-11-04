@@ -1,14 +1,25 @@
 // miniprogram/pages/a_homepage/homepage.js
+const moment = require('../../utils/moment.min.js');
 var app=getApp();
 Component({
   data:{
     input:'',
+    startdate:'',//默认是三个月前
+    enddate:'',//默认是今天，交给后端判断是否是交易日
+    frequency:'d',
+    adjustFlag:3,
     searchHistory:[],
   },
 pageLifetimes:{
   show:function(){
     //组件所在页面显示的时候触发
-    console.log('homepage.js attached');
+    //console.log('homepage.js attached');
+    let enddate=new Date();
+    console.log(enddate);
+    this.data.enddate=moment(enddate).format('YYYY-MM-DD');
+    this.data.startdate=moment(enddate).add(-3,'months').format('YYYY-MM-DD');
+    console.log(this.data.startdate);
+    console.log(this.data.enddate);
     let q="history_list";
     let historyList=[];
     try{
@@ -40,7 +51,7 @@ methods:{
       this.setData({
         searchHistory:[],
       })
-      try{//将缓存也清理掉
+      try{//将缓存也清理掉,history_list键保留，内容清空
         wx.setStorage({
           data: [],
           key: 'history_list',
@@ -64,11 +75,23 @@ methods:{
     onSubmit:function(e){
      let that=this;
      if(!that.checkField()) return;
-     let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(that.data.input);
+     let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(that.data.input)+'&startDate='+encodeURIComponent(that.data.startdate)+'&endDate='+encodeURIComponent(that.data.enddate)+'&frequency='+encodeURIComponent(this.data.frequency)+'&adjustFlag='+encodeURIComponent(this.data.adjustFlag);
      console.log(_url);
      wx.navigateTo({
        url:_url
      })
+    },
+    onSubmitFromHistory(e){
+      let idx=e.currentTarget.dataset.index;
+      console.log(idx);
+      if(idx>=0){
+        let content=wx.getStorageSync('history_list');
+        let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(content[idx]);
+        console.log(_url);
+        wx.navigateTo({
+          url:_url
+        })
+      }
     }
  }})
  
