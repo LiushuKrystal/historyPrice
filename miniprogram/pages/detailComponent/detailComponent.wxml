@@ -2,8 +2,11 @@
 <view class="detailContainer">
   <view class="goodsContent">
     <image src="{{item.image}}" style="width:100px;height:100px;"></image>
-    <view class="goodsDescription">
-      <view class="goods-name">{{item.name}}</view>
+    <view class="stockDescription">
+      <view class="stock-name">{{item.name}}</view>
+      <view class="stock-number">{{item.searchObj.searchKey}}</view>
+      <picker mode='selector' range='{{frequecyArray}}' value='{{index}}' bindchange='bindFrePickerChange'></picker>
+      <picker mode="selector" range='{{adjustFlagArray}}' value='{{index}}' bindchange='bindFlagPickerChange'></picker>
     </view>
   </view>
   <view class="price">

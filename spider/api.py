@@ -33,10 +33,10 @@ def index():
     json_data=baostockapi.getdata(searchObj['searchKey'],searchObj['startDate'],searchObj['endDate'],searchObj['frequency'],searchObj['adjustFlag'])
     print(json_data)
     #获取失败
-    if json_data is None:
+    if json_data['error_code']!='0':
         return{
             'code':10002,
-            'msg':'请求发生错误',
+            'msg':json_data['error_msg'],
             'data':None
         }
     #获取成功
@@ -44,7 +44,7 @@ def index():
     return {
         'code':0,
         'msg':'请求成功',
-        'data':json_data
+        'data':json_data['data_list']
     }
 
 #通过flask实例启动服务

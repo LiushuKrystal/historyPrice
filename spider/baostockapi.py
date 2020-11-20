@@ -14,19 +14,23 @@ def getdata(searchKey,startdate,enddate,frequency,adjustflag):
     print('query_history_k_data_plus respond error_code:'+rs.error_code)
     print('query_history_k_data_plus respond error_msg:'+rs.error_msg)
 
+    obj={}
+
+    if(rs.error_code!='0'):
+        obj['error_code']=rs.error_code
+        obj['error_msg']=rs.error_msg
+        return obj
+        
+
     #print(type(rs))#<class 'baostock.data.resultset.ResultData'>
     #打印结果集
     data_list=[]
     while(rs.error_code=='0' and rs.next()):
     #获取一条记录，将记录合并在一起
         data_list.append(rs.get_row_data())
-    #构建成pandas的DataFrame数据格式的数据
-    result=pd.DataFrame(data_list,columns=rs.fields)
-
-    #输出结果集到csv文件
-    result.to_csv("C:\yan\miniprograms\historyPrice\spider\history_k_data.csv",index=False)
-
+    obj['error_code']='0'
+    obj['data_list']=data_list
     #登出系统
     bs.logout()
 
-    return data_list
+    return obj

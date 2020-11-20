@@ -75,7 +75,8 @@ methods:{
     onSubmit:function(e){
      let that=this;
      if(!that.checkField()) return;
-     let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(that.data.input)+'&startDate='+encodeURIComponent(that.data.startdate)+'&endDate='+encodeURIComponent(that.data.enddate)+'&frequency='+encodeURIComponent(this.data.frequency)+'&adjustFlag='+encodeURIComponent(this.data.adjustFlag);
+     /*这里为什么要对参数进行URL编码？搜索关键词可能不是股票代码而是股票名，也就是中文，不包括在US-ASCII字符集里面，所以需要编码*/
+     let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(that.data.input)+'&startDate='+this.data.startdate+'&endDate='+this.data.enddate+'&frequency='+this.data.frequency+'&adjustFlag='+this.data.adjustFlag;
      console.log(_url);
      wx.navigateTo({
        url:_url
@@ -86,7 +87,7 @@ methods:{
       console.log(idx);
       if(idx>=0){
         let content=wx.getStorageSync('history_list');
-        let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(content[idx]);
+        let _url='/pages/detailComponent/detailComponent'+'?'+'searchKey='+encodeURIComponent(content[idx])+'&startDate='+this.data.startdate+'&endDate='+this.data.enddate+'&frequency='+this.data.frequency+'&adjustFlag='+this.data.adjustFlag;
         console.log(_url);
         wx.navigateTo({
           url:_url
