@@ -1,21 +1,43 @@
 <!--pages/detailComponent/detailComponent.wxml-->
+<view class="total">
 <view class="detailContainer">
-  <view class="goodsContent">
-    <image src="{{item.image}}" style="width:100px;height:100px;"></image>
-    <view class="stockDescription">
-      <view class="stock-name">{{item.name}}</view>
-      <view class="stock-number">{{item.searchObj.searchKey}}</view>
-      <picker mode='selector' range='{{frequecyArray}}' value='{{index}}' bindchange='bindFrePickerChange'></picker>
-      <picker mode="selector" range='{{adjustFlagArray}}' value='{{index}}' bindchange='bindFlagPickerChange'></picker>
+  <view class="tabTit box tc">
+      <view class="flex1{{!tab[index]?' active':''}}" wx:for="{{tabTxt}}" wx:key="index" data-index="{{index}}" bindtap="filterTab"><text>{{item}}</text><image src="/images/arrow.png"></image></view>
+    </view>
+    <view class="tabLayer tc" hidden="{{tab[0]}}" id="selector0">
+      <text class="{{freindex==item.id?'active':''}}" wx:for="{{filterList.frequencyList}}" wx:key="id" data-id="{{item.id}}" data-index="0" data-txt="{{item.name}}" bindtap="filter">{{item.name}}</text>
+    </view>
+    <view class="timepicker-tabLayer" hidden="{{tab[1]}}" id="selector1" >
+      <timePicker config="{{pickerConfig}}" bind:listenEvent="eventFromSon" bind:hidePicker="hideWidget">
+
+      </timePicker>
+    </view>
+    <view class="tabLayer tc" hidden="{{tab[2]}}" id="selector2" >
+      <text class="{{adjindex==item.id?'active':''}}" wx:for="{{filterList.adjustFlagList}}" wx:key="id" data-id="{{item.id}}" data-index="2" data-txt="{{item.name}}" bindtap="filter">{{item.name}}</text>
     </view>
   </view>
-  <view class="price">
-    <view class="price-title">价格走势</view>
+
+  <view class="price" bindtap="hideWidget">
+    <view class="goodsContent">
+    <view class="stockDescription">
+      <view class="row-info"><view class="stock-basic">{{searchObj.code_name}}</view>
+      <view class="stock-basic">{{searchObj.code}}</view>
+    </view>
+      <view class="row-info"><view class="stock-basic">证券类型：{{typeOfStock[searchObj.type-1]}}</view>
+      <view class="stock-basic">上市状态：{{status[searchObj.status]}}</view>
+    </view>
+      <view class="row-info"><view class="stock-basic">上市日期：{{searchObj.ipoDate}}</view>
+      <view class="stock-basic">退市日期：{{searchObj.outDate}}</view>
+    </view>
+    </view>
     <view class="price-chart">
-      <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" class="ec-style"></ec-canvas>
+      <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" style="{{hideCanvas?'position:fixed;left:100%':''}}"></ec-canvas>
+      <image class="canvas-image" src="{{canvasImage}}" alt=""></image>
     </view>
     <view class="timeTabContainer">
       <view class="timeTab" wx:for="{{tabList}}" wx:key="index" data-index="{{index}}" bindtap="timeTabClick">{{item}}</view>
     </view>
   </view>
+</view>
+
 </view>

@@ -1,4 +1,28 @@
 <!--pages/charttest/charttest.wxml-->
 <view class='test-container'>
-  <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" class="ec-style"></ec-canvas>
+  <!-- <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" class="ec-style"></ec-canvas> -->
+  <view class="goodsContent">
+    <view class="stockDescription">
+      <view class="row-info"><view class="stock-basic">{{searchObj.code_name}}</view>
+      <view class="stock-basic">{{searchObj.code}}</view>
+    </view>
+      <view class="row-info"><view class="stock-basic">证券类型：{{typeOfStock[searchObj.type-1]}}</view>
+      <view class="stock-basic">上市状态：{{status[searchObj.status]}}</view>
+    </view>
+      <view class="row-info"><view class="stock-basic">上市日期：{{searchObj.ipoDate}}</view>
+      <view class="stock-basic">退市日期：{{searchObj.outDate}}</view>
+    </view>
+      <view class="row-info"><picker mode="selector" range="{{frequencyShow}}" value="{{freindex}}" bindchange="bindFrePickerChange">
+        <view class="picker">
+        频率类型：{{frequencyShow[freindex]}}
+        </view>
+      </picker>
+      <picker mode="selector" range='{{adjustFlagShow}}' value='{{adjindex}}' bindchange='bindFlagPickerChange'>
+        <view class="picker">
+        复权类型：{{adjustFlagShow[adjindex]}}
+        </view>
+      </picker>
+    </view>  
+    </view>
+  </view>
 </view>

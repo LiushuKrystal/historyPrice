@@ -1,11 +1,12 @@
 {
   "component": true,
   "usingComponents": {
-    "ec-canvas":"../../ec-canvas/ec-canvas"
+    "ec-canvas":"../../ec-canvas/ec-canvas",
+    "timePicker":"../timePicker/timePicker"
   },
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
-  "navigationBarTitleText": "商品详情",
+  "navigationBarTitleText": "历史行情",
   "backgroundColor": "#eeeeee",
   "backgroundTextStyle": "light"
 }

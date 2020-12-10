@@ -37,7 +37,7 @@ function getOption(dataset){
       }
     },
     legend:{
-      data:['日K','MA5','MA10','MA20','MA30']
+      data:['K线','MA5','MA10','MA20','MA30']
     },
     grid:{
       //show:true
@@ -56,10 +56,21 @@ function getOption(dataset){
       axisLabel:{
         formatter:function(value){
           let d=value.split('-');
-          if(moment(dataset.categoryData[0]).format('YYYY')==moment(dataset.categoryData[length-1]).format('YYYY')){
-            d=d[1]+'-'+d[2]//只保留月-日
+          console.log('fromEchartsXAxis',d);
+          if(d.length==6){
+            //分钟线
+            if(dataset.categoryData[0].slice(0,4)==dataset.categoryData[length-1].slice(0,4)){
+              d=d[1]+'-'+d[2]+' '+d[3]+':'+d[4];
+            }
+            else d=d[0]+'-'+d[1]+'-'+d[2]+' '+d[3]+':'+d[4];
           }
-          else d=d[0]+'-'+d[1]+'-'+d[2];
+          else{
+            //如果开始和结束的年份相同就仅保留月-日
+            if(moment(dataset.categoryData[0]).format('YYYY')==moment(dataset.categoryData[length-1]).format('YYYY')){
+              d=d[1]+'-'+d[2]
+            }
+            else d=d[0]+'-'+d[1]+'-'+d[2];
+          }
           return d;
         },
         interval:parseInt((length-3)/2),
@@ -95,7 +106,7 @@ function getOption(dataset){
     }],
     series:[
       {
-        name:"日K线",
+        name:dataset.freName,
         type:'candlestick',
         data:dataset.values,
         itemStyle:{
@@ -235,20 +246,80 @@ Component({
   properties: {
     
   },
+  lifetimes:{
+    
+  },
 
   /**
    * 组件的初始数据
    */
   data: {
+    filterList:{
+      'frequencyList':[{
+        'id':0,
+        'name':'日k线',
+        'queryWord':'d',
+      },{
+        'id':1,
+        'name':'周k线',
+        'queryWord':'w'
+      },{
+        'id':2,
+        'name':'月k线',
+        'queryWord':'m'
+      },{
+        'id':3,
+        'name':'5分钟线',
+        'queryWord':'5'
+      },{
+        'id':4,
+        'name':'15分钟线',
+        'queryWord':'15'
+      },{
+        'id':5,
+        'name':'30分钟线',
+        'queryWord':'30'
+      },{
+        'id':6,
+        'name':'60分钟线',
+        'queryWord':'60'
+      }
+      ],
+      'adjustFlagList':[{
+        'id':0,
+        'name':'不复权'
+      },{
+        'id':1,
+        'name':'后复权'
+      },{
+        'id':2,
+        'name':'前复权'
+      }],
+    },
     ec:{
       lazyLoad:true//置为true后可以延迟加载图表
     },
     searchObj:{},
     tabList:["近1月","近3月","近6月","近1年","近3年"],
     tabActive:0,
+    freindex:0,
+    adjindex:0,
+    dateindex:0,
+    hideCanvas:false,
     dataset:[],
-    frequencyArray:['d','w','m',5,15,30,60],
-    adjustFlagArray:[3,1,2],
+    typeOfStock:['股票','指数','其他'],
+    status:['退市','上市'],
+    tabTxt:['频率类型','起止时间','复权类型'],
+    tab:[true,true,true],
+    selectorHeight:0,
+    pickerConfig: {
+      endDate: true,//是否包含结束日期
+      column: "second",//精确到多少（有几列）
+      initStartTime: "",
+      initEndTime: "",
+      limitStartTime: "1990-12-19 00:00:00",
+      limitEndTime: ""
+    },
   },
 
   /**
@@ -313,33 +384,145 @@ Component({
       //用构造的数据渲染图表
       this.chart.setOption(getOption(dataset));
     },
+    async changeFrequency(id){
+      wx.showLoading({
+        title: '查询中...',
+      })
+      let word=this.data.filterList.frequencyList.find(ele => ele.id==id).queryWord;
+      this.data.searchObj.frequency=word;
+      console.log('searchObj',this.data.searchObj);
+      let renderresult=await this.renderResult();
+      if(this.handleError(renderresult)){
+        wx.hideLoading();
+      }
+      else{
+        console.log('error from changeFrequency');
+      }
+    },
     async onLoad(options){
       wx.showLoading({
         title: '查询中...',
       })
       if(options.searchKey){
-        //从路径参数获取查询用的参数
-        let searchObj={};
-        searchObj.searchKey=decodeURIComponent(options.searchKey);//解码url
-        searchObj.startDate=decodeURIComponent(options.startDate);
-        searchObj.endDate=decodeURIComponent(options.endDate);
-        searchObj.frequency=decodeURIComponent(options.frequency);
-        searchObj.adjustFlag=decodeURIComponent(options.adjustFlag);
+        //将查询的日期范围赋值给日期组件的config数组
         this.setData({
-          searchObj:searchObj
+          initStartTime:options.startDate,
+          initEndTime:options.endDate,
+          limitEndTime:options.endDate
         })
+        //从路径参数获取查询用的参数
+        let searchKey=decodeURIComponent(options.searchKey);//从url中解码出搜索关键字
+        //这里如果是中文输入，必须先通过接口获取到对应的股票代码
+        let basicinfoResult=await this.basicInfoApi(searchKey,options);
+        let judgebasicError=await this.handleError(basicinfoResult);
+        if(!judgebasicError) return;
+         //获取wxml页面的图表组件
+        this.echartComponent=this.selectComponent('#mychart-dom-bar');
+        //请求数据，渲染图表
+        let renderresult=await this.renderResult();
+        if(this.handleError(renderresult)){
+          wx.hideLoading();
+        }
       }
       else{
         console.log("error");
       }
     },
     async onReady(){
-      //获取wxml页面的图表组件
-      this.echartComponent=this.selectComponent('#mychart-dom-bar');
-      //请求数据，渲染图表
-      let renderresult=await this.renderResult();
-      if(renderresult.code=='error'){
-        let reason=renderresult.msg;
+     
+    },
+      // 选项卡
+  filterTab: function(e) {
+    //将 canvas 通过 canvasToTempFilePath 转化为图片 并隐藏canvas
+    if(e.currentTarget.dataset.index==1){
+      const ec_component=this.echartComponent;
+      ec_component.canvasToTempFilePath({
+        success:res => {
+          console.log('drawSuccess',res.tempFilePath);
+            this.setData({
+              hideCanvas:true,
+              canvasImage:res.tempFilePath,
+            })
+        },
+        fail: res => console.log('失败',res)
+      })
+    }
+    var data = [true, true, true],
+        index = e.currentTarget.dataset.index;
+    data[index] = !this.data.tab[index];
+    this.setData({
+        tab: data
+    })
+    let str='#selector'+e.currentTarget.dataset.index;  
+    this.setHeight(str);
+  },
+    //筛选项点击操作
+    filter: function(e) {
+      var self = this,
+          id = e.currentTarget.dataset.id,
+          txt = e.currentTarget.dataset.txt,
+          tabTxt = this.data.tabTxt;
+      switch (e.currentTarget.dataset.index) {
+          case '0':
+              tabTxt[0] = txt;
+              self.setData({
+                  data: [],
+                  //tab: [true, true, true],
+                  tabTxt: tabTxt,
+                  freindex: id
+              });
+              this.changeFrequency(id);
+              break;
+          case '1':
+              tabTxt[1] = txt;
+              self.setData({
+                  data: [],
+                  //tab: [true, true, true],
+                  tabTxt: tabTxt,
+                  dateindex: id
+              });
+              break;
+          case '2':
+              tabTxt[2] = txt;
+              self.setData({
+                  data: [],
+                  //tab: [true, true, true],
+                  tabTxt: tabTxt,
+                  adjindex: id
+              });
+              break;
+      }   
+    },
+    setHeight:function(str){
+      var query = wx.createSelectorQuery()
+      query.select(str).boundingClientRect()
+      var height;
+      let that=this;
+      query.exec(function (res) {//回调函数为匿名函数时，this会指向window，所以需要在外部对this进行绑定;如果是箭头函数，this的查找与常规变量的搜索方式一致，在外部环境中逐层查找。
+        height=res[0].height;
+        console.log(height);
+        that.data.selectorHeight=height;
+      })
+    },
+    hideWidget:function(){
+      this.setData({
+        hideCanvas:false,
+        canvasImage:'',
+      })
+      const found=this.data.tab.findIndex(element => element==false)
+      if(found==-1) return;
+      console.log("found"+found);
+      let height=this.data.selectorHeight;
+      this.animate('#selector'+found,[{translateY:0},{translateY:-height}],50,()=>{
+        this.setData({
+            tab:[true,true,true]
+        });
+        this.clearAnimation('#selector'+found,{translateY:true});//也可以不加第二个参数，默认清除selector元素上的所有动画属性
+      })
+    },
+    async handleError(result){
+      if(result.code=='error'){
+        let reason=result.msg;
         wx.hideLoading({
           success: (res) => {},
         })
@@ -362,9 +545,10 @@ Component({
             }
           }
         })
+        return false;
       }
       else{
-        wx.hideLoading();
+        return true;
       }
     },
 
@@ -377,7 +561,8 @@ Component({
         resultobj.msg=responseData.data.msg;
         return resultobj;
       }
-      responseData=this.constructDataFromSpider(responseData);
+      let formattedData=this.constructDataFromSpider(responseData.data.data);
+      formattedData['freName']=this.data.filterList.frequencyList[this.data.freindex].name;//“周k线”，用于在图表中显示出来。
       let that=this;
 
       let chart=await new Promise(resolve=>{
@@ -395,20 +580,77 @@ Component({
       })
       that.chart=chart;
       //用构造的数据渲染图表
-      console.log("传给getOption函数的数据:",responseData);
-      that.chart.setOption(getOption(responseData));
+      console.log("传给getOption函数的数据:",formattedData);
+      that.chart.setOption(getOption(formattedData));
       this.setHistoryList();
       resultobj.code='success';
       return resultobj;
     },
 
+    async basicInfoApi(key,options){
+      let resultObj={};
+      let searchData={};
+      searchData.data=key;
+      let rgx = /.*[\u4e00-\u9Fd5]+.*$/;//测试输入中是否含有中文字符
+      if(rgx.test(key)){
+          //含有中文，需要查找对应的股票代码
+        searchData.flag=true;
+      }
+      else{
+        searchData.flag=false;
+      }
+      try{
+        var res=await new Promise((resolve,reject)=>wx.request({
+          url:'http://localhost:5000/basic_info',
+          method:'POST',
+          data:{
+            searchData:searchData,
+          },
+          success:res=>resolve(res),
+          fail:err=>reject(err),
+        }))
+      }catch(e){
+        console.log(e);
+      }
+      if(res.data.code!=0){
+        resultObj.code='error';
+        resultObj.msg=res.data.msg;
+      }
+      else{
+        resultObj.code='success';
+        let searchObj={};
+        searchObj.code=res.data.data[0][0];
+        searchObj.code_name=res.data.data[0][1];
+        searchObj.ipoDate=res.data.data[0][2];
+        searchObj.outDate=res.data.data[0][3];
+        searchObj.type=res.data.data[0][4];
+        searchObj.status=res.data.data[0][5];
+        if(searchObj.status==0){
+          //如果已经退市，需要把查询范围设置为退市日前三个月-退市日
+          searchObj.endDate=searchObj.outDate;
+          searchObj.startDate=moment(searchObj.outDate).add(-3,'months').format('YYYY-MM-DD');
+          console.log(searchObj.startDate);
+        }
+        else{
+          searchObj.startDate=options.startDate;
+          searchObj.endDate=options.endDate;
+        }
+        searchObj.frequency=options.frequency;
+        searchObj.adjustFlag=options.adjustFlag;
+        if(searchObj.outDate=='') searchObj.outDate='-';
+        this.setData({
+          searchObj:searchObj
+        })
+      }
+      return resultObj;
+    },
 
     async spiderapi(){
-      //请求爬虫数据接口'
+      //请求爬虫数据接口
       try{
         var res=await new Promise((resolve,reject)=>wx.request({//箭头函数的this指向它的直接上层，也就是调用spiderapi的component对象
           //服务端地址
-          url:'http://localhost:5000/',
+          url:'http://localhost:5000/price',
           method:'POST',
           data:{
             searchObj:this.data.searchObj,//将传入的参数作为请求参数
@@ -427,13 +669,20 @@ Component({
       if(responseData.length!=0){
         console.log('返回数组不为空');
         //请求成功
-        let categoryData=[];
-        let values=[];
-        //按开盘、收盘、最低、最高调整数组中值的顺序
+        let categoryData=[];//日期数据
+        let values=[];//开盘价、收盘价、最低价、最高价数据
+        //按开盘、收盘、最低、最高调整数组中的值的顺序
         for(let i=0;i<responseData.length;i++){
-          categoryData.push(responseData[i].splice(0,1)[0]);
-          responseData[i].splice(0,1);
-          let element=[responseData[i].splice(0,1)[0]];
+          if(this.data.freindex>=3){
+            let dateTime=responseData[i].splice(0,3)[1];
+            let dateStr=[dateTime.slice(0,4),dateTime.slice(4,6),dateTime.slice(6,8),dateTime.slice(8,10),dateTime.slice(10,12),dateTime.slice(12)].join('-');
+            categoryData.push(dateStr);
+          }
+          else{
+            //splice函数在数组特定位置插入/删除/替换元素，会改变原数组，并返回删除后的数组
+            categoryData.push(responseData[i].splice(0,2)[0]);//取到日期数组
+          }
+          let element=[responseData[i].splice(0,1)[0]];//删除第一个数，开盘价，注意外面的中括号不能省略，说明element是一个数组而不是一个字符串
           element=element.concat(responseData[i].splice(0,3).reverse());
           values.push(element);
         }
@@ -459,10 +708,10 @@ Component({
         let hl=wx.getStorageSync('history_list');
         if(hl){//任意对象，除了null以外转换成Boolean类型都应该是true
           let picked_in_hl=hl.some(item=>{
-            return item===this.data.searchObj.searchKey;
+            return item===this.data.searchObj.code;
           })
           if(!picked_in_hl){
-            hl.push(this.data.searchObj.searchKey);
+            hl.push(this.data.searchObj.code);
             try{
               wx.setStorage({
                 data:hl,
@@ -498,6 +747,12 @@ Component({
       }
       this.data.dataset=result;
       return result;
+    },
+    eventFromSon:function(e){
+      this.setData({
+        startDateTime:e.detail.startDateTime,
+        endDateTime:e.detail.endDateTime
+      })
+    },
     }
-  }
-})
+  })

@@ -1,8 +1,8 @@
 <!--miniprogram/pages/a_homepage/homepage.wxml-->
 <view class="page">
-<form class="search-container" catchsubmit="onSubmit">
-  <input class="search-input" name="input" placeholder="请输入股票名或股票代码" formType="submit" bindinput="onChangeInput" bindconfirm="onSubmit"></input>
-  <button formType="submit" class="search-button" style="width:40px;"><image src="../../images/searchicon.png"></image></button>
+<form class="search-container" bindreset="formReset">
+  <input class="search-input" placeholder="请输入证券名或证券代码" bindinput="onChangeInput" bindconfirm="formReset" value="{{inputvalue}}"></input>
+  <button formType="reset" class="search-button" style="width:40px;"><image src="../../images/searchicon.png"></image></button>
 </form>
 
 <view class="search-history">

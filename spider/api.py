@@ -4,7 +4,7 @@ import getdata
 import baostockapi
 app=Flask(__name__)
 
-@app.route('/',methods=['POST'])
+@app.route('/price',methods=['POST'])
 def index():
     #判断请求参数是否是json
     if not request.is_json:
@@ -30,7 +30,53 @@ def index():
         }
     searchObj=p['searchObj']
     #获取股票历史价格
-    json_data=baostockapi.getdata(searchObj['searchKey'],searchObj['startDate'],searchObj['endDate'],searchObj['frequency'],searchObj['adjustFlag'])
+    json_data=baostockapi.getdata(searchObj['code'],searchObj['startDate'],searchObj['endDate'],searchObj['frequency'],searchObj['adjustFlag'])
+    print(json_data)
+    #获取失败
+    if json_data['error_code']!='0':
+        return{
+            'code':10002,
+            'msg':json_data['error_msg'],
+            'data':None
+        }
+    #获取成功
+    #dataframe类型的变量不能被序列化为json字符串
+    return {
+        'code':0,
+        'msg':'请求成功',
+        'data':json_data['data_list']
+    }
+
+@app.route('/basic_info',methods=['POST'])
+def get_basic_info():
+    #判断请求参数是否是json
+    if not request.is_json:
+        return {
+            'code':10001,
+            'msg':'请求参数类型不是json',
+            'data':None,
+        }  
+    #解析json数据，依然是json格式的，网络上传递的json数据的关键字都是字符串型而不是变量，所以需要通过字符串引用
+    p=request.get_json()
+    if 'searchData' not in p.keys():
+        return {
+            'code':10001,
+            'msg':'字段不存在',
+            'data':None
+        }
+    #判断字段是否为空
+    if not p['searchData']:
+        return {
+            'code':10001,
+            'msg':'字段非法',
+            'data':None
+        }
+    searchData=p['searchData']
+    #获取股票基本信息
+    if(searchData['flag']):
+        json_data=baostockapi.getBasicInfoByName(searchData['data'])
+    else:
+        json_data=baostockapi.getBasicInfoByCode(searchData['data'])
     print(json_data)
     #获取失败
     if json_data['error_code']!='0':

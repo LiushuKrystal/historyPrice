@@ -15,7 +15,6 @@ pageLifetimes:{
     //组件所在页面显示的时候触发
     //console.log('homepage.js attached');
     let enddate=new Date();
-    console.log(enddate);
     this.data.enddate=moment(enddate).format('YYYY-MM-DD');
     this.data.startdate=moment(enddate).add(-3,'months').format('YYYY-MM-DD');
     console.log(this.data.startdate);
@@ -63,7 +62,7 @@ methods:{
     onChangeInput:function(e){
       var inputvalue=e.detail.value.input==undefined?e.detail.value:e.detail.value.input;
       this.setData({
-        input:inputvalue
+        input:inputvalue,
       })
     },
     checkField:function(){
@@ -72,7 +71,10 @@ methods:{
       if(inputVal==='') return false;
       else return true;
     },
-    onSubmit:function(e){
+    formReset:function(e){
+      this.setData({
+        inputvalue:'',
+      })
      let that=this;
      if(!that.checkField()) return;
      /*这里为什么要对参数进行URL编码？搜索关键词可能不是股票代码而是股票名，也就是中文，不包括在US-ASCII字符集里面，所以需要编码*/
