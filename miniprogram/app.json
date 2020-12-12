@@ -17,7 +17,6 @@
     "pages/openapi/cloudid/cloudid",
     "pages/im/im",
     "pages/im/room/room",
-    "pages/list",
     "pages/charttest/charttest",
     "pages/timePicker/timePicker"
   ],

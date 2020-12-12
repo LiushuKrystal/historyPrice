@@ -1,6 +1,7 @@
 // pages/detailComponent/detailComponent.js
 import * as echarts from '../../ec-canvas/echarts';
 const moment = require('../../utils/moment.min.js');
+//验证当前文件是否在暂存区中
 //计算MA值的函数
 function calculateMA(dayCount,dataset){
   let result=[];
@@ -56,7 +57,6 @@ function getOption(dataset){
       axisLabel:{
         formatter:function(value){
           let d=value.split('-');
-          console.log('fromEchartsXAxis',d);
           if(d.length==6){
             //分钟线
             if(dataset.categoryData[0].slice(0,4)==dataset.categoryData[length-1].slice(0,4)){
@@ -287,13 +287,16 @@ Component({
       ],
       'adjustFlagList':[{
         'id':0,
-        'name':'不复权'
+        'name':'不复权',
+        'queryWord':'3'
       },{
         'id':1,
-        'name':'后复权'
+        'name':'后复权',
+        'queryWord':'1'
       },{
         'id':2,
-        'name':'前复权'
+        'name':'前复权',
+        'queryWord':'2'
       }],
     },
     ec:{
@@ -314,7 +317,7 @@ Component({
     selectorHeight:0,
     pickerConfig: {
       endDate: true,//是否包含结束日期
-      column: "second",//精确到多少（有几列）
+      column: "",//精确到多少（有几列）
       initStartTime: "",
       initEndTime: "",
       limitStartTime: "1990-12-19 00:00:00",
@@ -390,13 +393,28 @@ Component({
       })
       let word=this.data.filterList.frequencyList.find(ele => ele.id==id).queryWord;
       this.data.searchObj.frequency=word;
-      console.log('searchObj',this.data.searchObj);
+      console.log('searchObj',this.data.searchObj); 
       let renderresult=await this.renderResult();
       if(this.handleError(renderresult)){
         wx.hideLoading();
       }
       else{
         console.log('error from changeFrequency');
+      }
+    },
+    async changeAdjustFlag(id){
+      wx.showLoading({
+        title:'查询中...',
+      })
+      let word=this.data.filterList.adjustFlagList.find(ele => ele.id==id).queryWord;
+      this.data.searchObj.adjustFlag=word;
+      console.log('searchObjAdjustFlag',this.data.searchObj);
+      let renderresult=await this.renderResult();
+      if(this.handleError(renderresult)){
+        wx.hideLoading();
+      }
+      else{
+        console.log('error from changeAdjustFlag');
       }
     },
     async onLoad(options){
@@ -464,14 +482,25 @@ Component({
           tabTxt = this.data.tabTxt;
       switch (e.currentTarget.dataset.index) {
           case '0':
+              this.hideWidget(0);
               tabTxt[0] = txt;
+              let oldValue=self.data.freindex;
+              let str='pickerConfig.column';
+              let value;
+              if(id>=3){
+                value='second';
+              }
+              else value='';
+              self.setData({
+                [str]:value
+                });
               self.setData({
                   data: [],
-                  //tab: [true, true, true],
                   tabTxt: tabTxt,
                   freindex: id
               });
-              this.changeFrequency(id);
+              if(oldValue!=self.data.freindex)
+                this.changeFrequency(id);
               break;
           case '1':
               tabTxt[1] = txt;
@@ -483,13 +512,16 @@ Component({
               });
               break;
           case '2':
+              this.hideWidget(2);
               tabTxt[2] = txt;
+              oldValue=self.data.adjindex;
               self.setData({
                   data: [],
-                  //tab: [true, true, true],
                   tabTxt: tabTxt,
                   adjindex: id
               });
+              if(oldValue!=self.data.adjindex)
+                this.changeAdjustFlag(id);
               break;
       }   
     },
@@ -504,20 +536,24 @@ Component({
         that.data.selectorHeight=height;
       })
     },
-    hideWidget:function(){
-      this.setData({
-        hideCanvas:false,
-        canvasImage:'',
-      })
-      const found=this.data.tab.findIndex(element => element==false)
-      if(found==-1) return;
-      console.log("found"+found);
+    hideWidget:function(index){
+      let found;
+      //直接通过页面上的bind:hidePicker="hideWidget"调用，传的参数是点击事件，而不是undefined
+      if(typeof index!='number'){
+        found=this.data.tab.findIndex(element => element==false)
+        if(found==-1) return;
+      }
+      else found=index;
       let height=this.data.selectorHeight;
-      this.animate('#selector'+found,[{translateY:0},{translateY:-height}],50,()=>{
+      this.animate('#selector'+found,[{translateY:0},{translateY:-height}],20,()=>{
         this.setData({
             tab:[true,true,true]
         });
         this.clearAnimation('#selector'+found,{translateY:true});//也可以不加第二个参数，默认清除selector元素上的所有动画属性
+      })
+      this.setData({
+        hideCanvas:false,
+        canvasImage:'',
       })
     },
     async handleError(result){
@@ -748,11 +784,21 @@ Component({
       this.data.dataset=result;
       return result;
     },
-    eventFromSon:function(e){
-      this.setData({
-        startDateTime:e.detail.startDateTime,
-        endDateTime:e.detail.endDateTime
+    async eventFromSon(e){
+      wx.showLoading({
+        title: '查询中...',
       })
+      let start=e.detail.startDateTime.slice(0,10);
+      let end=e.detail.endDateTime.slice(0,10);
+      this.data.searchObj.startDate=start;
+      this.data.searchObj.endDate=end;
+      let renderresult=await this.renderResult();
+      if(this.handleError(renderresult)){
+        wx.hideLoading();
+      }
+      else{
+        console.log('error from eventFromSon');
+      }
     },
     }
   })

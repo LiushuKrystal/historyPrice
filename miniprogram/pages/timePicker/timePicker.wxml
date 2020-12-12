@@ -1,0 +1,53 @@
+<!--pages/timePicker/timePicker.wxml-->
+<view class="region" hidden="{{showPicker}}">
+  <view>
+    <picker-view indicator-style="height:35px;" class="picker-view-class" value="{{startArray}}" style="height: {{endDate?'120px':'250px'}};" bindchange="onStartChange" bindpickstart="onPickStart" bindpickend="onPickEnd">
+      <picker-view-column>
+        <view class="picker-item" wx:for="{{yearList}}" wx:key="*this" data-pos="index">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view class="picker-item" wx:for="{{monthList}}" wx:key="*this">{{item}}月</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view class="picker-item" wx:for="{{dateList}}" wx:key="*this">{{item}}日</view>
+      </picker-view-column>
+      <picker-view-column wx:if="{{hourColumn}}">
+        <view class="picker-item" wx:for="{{hourList}}" wx:key="*this">{{item}}时</view>
+      </picker-view-column>
+      <picker-view-column wx:if="{{minuteColumn}}">
+        <view class="picker-item" wx:for="{{minuteList}}" wx:key="*this">{{item}}分</view>
+      </picker-view-column>
+      <picker-view-column wx:if="{{secondColumn}}">
+        <view class="picker-item" wx:for="{{secondList}}" wx:key="*this">{{item}}秒</view>
+      </picker-view-column>
+    </picker-view>
+  </view>
+  <view style="text-align:center; margin:5px;"><text style="float:none;">至</text></view>
+  <view wx:if="{{endDate}}">
+    <picker-view indicator-style="height:35px;" class="picker-view-class" value="{{endArray}}" bindchange="onEndChange">
+      <picker-view-column>
+        <view class="picker-item" wx:for="{{yearList}}" wx:key="*this">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view class="picker-item" wx:for="{{monthList}}" wx:key="*this">{{item}}月</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view class="picker-item" wx:for="{{dateList}}" wx:key="*this">{{item}}日</view>
+      </picker-view-column>
+      <picker-view-column wx:if="{{hourColumn}}">
+        <view class="picker-item" wx:for="{{hourList}}" wx:key="*this">{{item}}时</view>
+      </picker-view-column>
+      <picker-view-column wx:if="{{minuteColumn}}">
+        <view class="picker-item" wx:for="{{minuteList}}" wx:key="*this">{{item}}分</view>
+      </picker-view-column>
+      <picker-view-column wx:if="{{secondColumn}}">
+        <view class="picker-item" wx:for="{{secondList}}" wx:key="*this">{{item}}秒</view>
+      </picker-view-column>
+    </picker-view>
+  </view>
+  <view class="btn-box" >
+    <text class="pick-btn" bindtap="hidePicker">取消</text>
+    <text class="pick-btn" style="color:#1AAD19;" bindtap="onConfirm">确定</text> 
+  </view>
+
+</view>

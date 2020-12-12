@@ -34,9 +34,9 @@
       <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" style="{{hideCanvas?'position:fixed;left:100%':''}}"></ec-canvas>
       <image class="canvas-image" src="{{canvasImage}}" alt=""></image>
     </view>
-    <view class="timeTabContainer">
+    <!--这部分是原来的思路，近1月到近3年 <view class="timeTabContainer">
       <view class="timeTab" wx:for="{{tabList}}" wx:key="index" data-index="{{index}}" bindtap="timeTabClick">{{item}}</view>
-    </view>
+    </view> -->
   </view>
 </view>
 

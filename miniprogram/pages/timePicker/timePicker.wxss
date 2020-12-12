@@ -1,0 +1,27 @@
+/* pages/timePicker/timePicker.wxss */
+#selector1 text:nth-of-type(1){
+  float:left;
+  opacity:0.5;
+  color:black;
+  font-size:16px;
+}
+#selector1 text:nth-of-type(2){
+  float:right;
+  color:#1AAD19;
+}
+
+.picker-view-class{
+  height:120px;
+}
+
+.picker-item{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.pick-btn{
+  font-size:16px;
+  margin:0 10px;
+  line-height:28px;
+}
