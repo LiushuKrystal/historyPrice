@@ -18,17 +18,14 @@
   </view>
 
   <view class="price" bindtap="hideWidget">
-    <view class="goodsContent">
+    <view>
     <view class="stockDescription">
-      <view class="row-info"><view class="stock-basic">{{searchObj.code_name}}</view>
+      <view class="stock-name">{{searchObj.code_name}}</view>
       <view class="stock-basic">{{searchObj.code}}</view>
-    </view>
-      <view class="row-info"><view class="stock-basic">证券类型：{{typeOfStock[searchObj.type-1]}}</view>
+      <view class="stock-basic">证券类型：{{typeOfStock[searchObj.type-1]}}</view>
       <view class="stock-basic">上市状态：{{status[searchObj.status]}}</view>
-    </view>
-      <view class="row-info"><view class="stock-basic">上市日期：{{searchObj.ipoDate}}</view>
-      <view class="stock-basic">退市日期：{{searchObj.outDate}}</view>
-    </view>
+      <view class="stock-basic">上市日期：{{searchObj.ipoDate}}</view>
+    <view class="stock-basic">退市日期：{{searchObj.outDate}}</view>
     </view>
     <view class="price-chart">
       <ec-canvas id="mychart-dom-bar" canvas-id="mychart-bar" ec="{{ec}}" style="{{hideCanvas?'position:fixed;left:100%':''}}"></ec-canvas>

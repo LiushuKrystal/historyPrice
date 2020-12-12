@@ -46,8 +46,18 @@ ec-canvas{
 }
 .stockDescription{
   display:flex;
-  flex-direction: column;
+  flex-direction:column;
   justify-content: center;
+  align-items:flex-start;
+  margin-left:20px;
+}
+
+.stock-name{
+  font-weight:bold;
+  font-size:22px;
+}
+.stock-basic{
+  opacity:0.7;
 }
 
 page{padding:90rpx 0 50px;}

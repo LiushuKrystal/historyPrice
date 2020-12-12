@@ -14,6 +14,10 @@ Component({
   data: {
     showPicker:false,
     endDate:true,
+    isStartTimeChanged:false,
+    isEndTimeChanged:false,
+    tempStartDate:'',
+    tempEndDate:''
   },
   lifetimes:{
     ready:function(){
@@ -194,28 +198,73 @@ Component({
       return ans;
     },
     isValid:function(t,flag){
-      return true;
+      t=moment(t);
+      if(flag=='start'){
+        let nowend=moment(this.data.tempEndDate);
+        if(t.isBefore(nowend)){
+          //是合理的起始时间
+          return true;
+        }
+        else{
+          wx.showToast({
+            title: '起始日期不合理',
+            icon: 'success',
+            duration: 2000
+          })
+          return false;
+        }
+      }
+      else if(flag=='end'){
+        let nowstart=moment(this.data.tempStartDate);
+        if(t.isAfter(nowstart)) return true;
+        else{
+          wx.showToast({
+            title: '终止日期不合理',
+            icon: 'fail',
+            duration: 2000
+          })
+          return false;
+        } 
+      }
     },
+    //如果时间没变，就不需要发请求，用一个变量实现，isStartTimeChanged
     onStartChange:function(e){
       let startdatetime=e.detail.value;//开始数组
-      if(this.isValid(startdatetime,'start')){
-        this.setData({
-          startDateTime:this.getDateTime(startdatetime)
-        })
+      this.data.tempStartArray=startdatetime;
+      startdatetime=this.getDateTime(startdatetime);
+      this.data.tempStartDate=startdatetime;
+      if(!this.data.tempEndDate)
+        this.data.tempEndDate=this.data.endDateTime;
+      if(this.data.startDateTime.slice(0,10)==startdatetime.slice(0,10)){
+        this.data.isStartTimeChanged=false;
       }
       else{
-
+        if(this.isValid(startdatetime,'start')){
+          this.setData({
+            startDateTime:startdatetime,
+            isStartTimeChanged:true
+          })
+        }
+        else this.data.isStartTimeChanged=false;//在改变了但是是无效的时候依然相当于没变，不用发起请求。
       }
     },
     onEndChange:function(e){
       let enddatetime=e.detail.value;//结束数组
-      if(this.isValid(enddatetime,'end')){
-        this.setData({
-          endDateTime:this.getDateTime(enddatetime)
-        })
+      this.data.tempEndArray=enddatetime;
+      enddatetime=this.getDateTime(enddatetime);
+      this.data.tempEndDate=enddatetime;
+      if(!this.data.tempStartDate)
+        this.data.tempStartDate=this.data.startDateTime;
+      if(this.data.endDateTime.slice(0,10)==enddatetime.slice(0,10)){
+        this.data.isEndTimeChanged=false;
       }
       else{
-
+        if(this.isValid(enddatetime,'end')){
+          this.setData({
+            endDateTime:enddatetime,
+            isEndTimeChanged:true,
+          })
+        }
       }
     },
     onPickStart:function(){
@@ -228,15 +277,40 @@ Component({
     onConfirm:function(){
       //需要获得当前页面的开始时间和结束时间，返回给父元素
       if(this.data.isPicking) return;
-      let time = {
-        startDateTime: this.data.startDateTime,
-        endDateTime: this.data.endDateTime
-      };
-      this.triggerEvent('listenEvent',time);
+      if(this.data.isStartTimeChanged||this.data.isEndTimeChanged){
+        let time = {
+          startDateTime: this.data.startDateTime,
+          endDateTime: this.data.endDateTime
+        };
+        this.setData({
+          startArray:(this.data.isStartTimeChanged?this.data.tempStartArray:this.data.startArray),
+          endArray:(this.data.isEndTimeChanged?this.data.tempEndArray:this.data.endArray)
+        })
+        this.triggerEvent('listenEvent',time);
+      }
+      else{
+        //无效的情况也是用isStart/EndTimeChanged=false表示的，所以需要把array恢复原值
+        this.setData({
+          startArray:this.data.startArray,
+          endArray:this.data.endArray
+        })
+      }
+      this.setData({
+        isStartTimeChanged:false,
+        isEndTimeChanged:false,
+        tempEndDate:'',
+        tempStartDate:''
+      })
       this.triggerEvent('hidePicker',{});//点击确定之后需要触发收起面板函数
     },
     //点击取消按钮
     hidePicker:function(){
+      this.setData({
+        isStartTimeChanged:false,
+        isEndTimeChanged:false,
+        tempEndDate:'',
+        tempStartDate:''
+      })
       this.triggerEvent('hidePicker',{});
     },
 
