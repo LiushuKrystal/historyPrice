@@ -1,7 +1,7 @@
 /* pages/charttest/charttest.wxss */
 .test-container{
-  width:400x;
-  height:400px;
+  width:100%;
+  height:600px;
 
   display:flex;
   flex-direction: column;
@@ -12,4 +12,19 @@
 ec-canvas{
   width:100%;
   height:100%;
+}
+
+/* pages/detailComponent/detailComponent.wxss */
+.goodsContent{
+  width:90%;
+}
+.stockDescription{
+  display:flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.row-info{
+  display:flex;
+  flex-direction:row;
+  justify-content:space-around;
 }

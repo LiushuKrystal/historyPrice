@@ -1,7 +1,28 @@
 // pages/charttest/charttest.js
 import * as echarts from '../../ec-canvas/echarts';
+const moment = require('../../utils/moment.min.js');
 let chart=null;
+function calculateMA(dayCount,dataset){
+  let result=[];
+  for(var i=0,length=dataset.values.length;i<length;i++){
+    if(i<dayCount-1){
+      result.push('-');
+      continue;
+    }
+    let sum=0;
+    for(var j=0;j<dayCount;j++){
+      sum+=parseFloat(dataset.values[i-j][1]);
+    }
+    result.push(sum/dayCount);
+  }
+  return result;
+}
 function initData(canvas,width,height,dpr){
+  const upColor='#ec0000';
+  const upBorderColor = '#8A0000';
+  const downColor = '#00da3c';
+  const downBorderColor = '#008F28';
+
   chart=echarts.init(canvas,null,{
     width:width,
     height:height,
@@ -9,83 +30,209 @@ function initData(canvas,width,height,dpr){
   });
   canvas.setChart(chart);
 
-  let xAxisData=["2020-09-09", "2020-09-10", "2020-09-11", "2020-09-14", "2020-09-15", "2020-09-16", "2020-09-17", "2020-09-18", "2020-09-21", "2020-09-22", "2020-09-23", "2020-09-24", "2020-09-25", "2020-09-28", "2020-09-29", "2020-09-30"];
-  let yAxisData=["15.34", "15.24", "14.54", "14.35", "14.38", "14.68", "14.49", "14.54", "14.48", "14.05", "13.98", "13.83", "13.67", "13.72", "13.72", "13.63"];
-  let adataset= {
-    'date':xAxisData,
-    'price':yAxisData
-  }
-  let testdataset={
-    source: [
-        ['2020-09-09', 15.34],
-        ['2020-09-10', 15.24],
-        ['2020-09-11', 14.54],
-        ['2020-09-14',14.35]
-    ]
-}
-  const length=xAxisData.length;
+  let dataset=wx.getFileSystemManager().readFileSync(wx.env.USER_DATA_PATH+'/data.txt','utf-8');
+  dataset=JSON.parse(dataset);
+
+  const length=dataset['categoryData'].length;
   let option={
     title:{
       show:false,
     },
-    dataset:{
-      source: [
-          ['2020-09-09', 15.34],['2020-09-10', 15.24],['2020-09-11', 14.54],['2020-09-14',14.35],['2020-09-15',14.38],['2020-09-16',14.68],['2020-09-17',14.49],['2020-09-18',14.54],['2020-09-21',14.48],['2020-09-22',14.05],['2020-09-23',13.98],['2020-09-24',13.83],['2020-09-25',13.67],['2020-09-28',13.72],['2020-09-29',13.72],['2020-09-30',13.63]]
+    tooltip:{
+      trigger:'axis',
+      axisPointer:{
+        type:'cross'
+      }
+    },
+    legend:{
+      data:['日K','MA5','MA10','MA20','MA30']
     },
     grid:{
       //show:true
-      left:10,
-      top:20,
-      right:10,
-      height:'80%',
-      width:'85%',
-    },
-    tooltip:{
-      show:true,
-      trigger:'axis',//触发器是axis，鼠标停在点上会显示坐标轴上的信息，也就是数据点的信息。
-      axisPointer:{
-        type:'cross'
-      },
-      backgroundColor:'rgba(5,5,5,0.8)',
-      borderWidth:1,
-      borderColor:'#000',
-      padding:[5,10],
-      textStyle:{
-        color:'#fff'
-      },
+      left:'10%',
+      right:'10%',
+      bottom:'15%'
     },
     xAxis:{
       type:'category',
+      data:dataset.categoryData,
+      boundaryGap:false,//设置成false，表示刻度不能仅作为分隔线，标签和数据点要和刻度线对齐
+      axisLine:{onZero:false},//不用在另一个轴的0刻度线上（y轴没有0刻度）
+      splitLine:{show:false},//类目轴默认不显示，数值轴默认显示
+      min:'dataMin',
+      max:'dataMax',//根据该轴上的数据的最大最小值设置坐标的最大最小值，类目轴也可以这样设置
       axisLabel:{
         formatter:function(value){
-          let d=value.split('-')
-          d=d[1]+'-'+d[2]//只保留月-日
-          return d
+          let d=value.split('-');
+          if(moment(dataset.categoryData[0]).format('YYYY')==moment(dataset.categoryData[length-1]).format('YYYY')){
+            d=d[1]+'-'+d[2]//只保留月-日
+          }
+          else d=d[0]+'-'+d[1]+'-'+d[2];
+          return d;
         },
         interval:parseInt((length-3)/2),
         showMaxLabel:true,
       },
       axisTick:{
-        alignWithLabel:true,
-        show:false
+        show:true
       },
     },
     yAxis:{
       type:'value',
+      scale:true,//脱离0值比例，设置成true以后坐标轴不会强制包含0刻度，这里设置了min和max所以无效
       min:function(value){
-        return Math.floor(value.min-5)
+        return (value.min-0.1).toFixed(1);
       },
       max:function(value){
-        return Math.ceil(value.max+5)
+        return (value.max+0.1).toFixed(1);
       },
-      axisPointer:{
-        snap:false,
+      splitArea:{
+        show:true
       }
     },
-    series:[{
-      type:'line',
-      smooth:true,
-    }]
+    dataZoom:[{
+      type:'inside',
+      end:100,//数据范围的百分比，可以通过定义start设置起始日期区间，但是可能和近1月有出入
+    },
+    {
+      show:true,
+      type:'slider',
+      top:'90%',
+      start:50,
+      end:100
+    }],
+    series:[
+      {
+        name:"日K线",
+        type:'candlestick',
+        data:dataset.values,
+        itemStyle:{
+          color:upColor,
+          color0:downColor,
+          borderColor:upBorderColor,
+          borderColor0:downBorderColor
+        },
+        markPoint:{
+          symbolSize:40,
+          label:{
+            fontSize:9,
+            formatter: function(param){
+              return param!=null?param.value:'';
+            }
+          },
+          data:[
+            {
+              name:'highest value',
+              type:'max',
+              valueDim:'highest'
+            },
+            {
+              name:'lowest value',
+              type:'min',
+              valueDim:'lowest',
+              itemStyle:{
+                color:'rgb(41,60,85)'
+              }
+            },
+            {
+              name:'average value on close',
+              type:'average',
+              valueDim:'close',
+              itemStyle:{
+                color:'rgb(128,128,128)'
+              }
+            }
+          ],
+          tooltip:{
+            formatter:function(param){
+              return param.name+'<br>'+(param.data.coord||'');
+            }
+          }
+        },
+        markLine:{
+          symbol:['none','none'],
+          data:[
+            [//数组第一项表示起点数据，第二项表示终点数据
+              {
+                name:'from lowest to highest',
+                type:'min',
+                valueDim:'lowest',
+                symbol:'circle',
+                symbolSize:10,
+                label:{
+                  show:false
+                },
+                emphasis:{
+                  label:{
+                    show:true
+                  }
+                }
+              },
+              {
+                type:'max',
+                valueDim:'highest',
+                symbol:'circle',
+                symbolSize:10,
+                label:{
+                  show:false
+                },
+                emphasis:{
+                  label:{
+                    show:true
+                  }
+                }
+              }
+            ],
+            {
+              name:'min line on close',
+              type:'min',
+              valueDim:'close'
+            },
+            {
+              name:'max line on close',
+              type:'max',
+              valueDim:'close'
+            }
+          ]
+        }
+      },
+      {
+        name:'MA5',
+        type:'line',
+        data:calculateMA(5,dataset),
+        smooth:true,
+        lineStyle:{
+          opacity:0.5
+        }
+      },
+      {
+        name:'MA10',
+        type:'line',
+        data:calculateMA(10,dataset),
+        smooth:true,
+        lineStyle:{
+          opacity:0.5
+        }
+      },
+      {
+        name:'MA20',
+        type:'line',
+        data:calculateMA(20,dataset),
+        smooth:true,
+        lineStyle:{
+          opacity:0.5
+        }
+      },
+      {
+        name:'MA30',
+        type:'line',
+        data:calculateMA(30,dataset),
+        smooth:true,
+        lineStyle:{
+          opacity:0.5
+        }
+      }
+  ]
   }
   chart.setOption(option);
   return chart;

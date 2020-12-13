@@ -138,19 +138,20 @@ Component({
 
     initByNewWay(callback) {
       // version >= 2.9.0：使用新的方式初始化
-      const query = wx.createSelectorQuery().in(this)
+      const query = wx.createSelectorQuery().in(this)//createselectorquery.in方法定义一个选择器，并将它的选取范围限制在自定义组件内，这里就是本身
       query
         .select('.ec-canvas')
-        .fields({ node: true, size: true })
+        .fields({ node: true, size: true })//fields函数获取节点的相关信息。需要获取的字段在fields中指定。返回值是 nodesRef 对应的 selectorQuery
+        //这里需要获取的是节点对应的canvas实例和节点尺寸
         .exec(res => {
           const canvasNode = res[0].node
-          this.canvasNode = canvasNode
+          this.canvasNode = canvasNode//得到了canvas实例，也就是一个DOM对象
 
           const canvasDpr = wx.getSystemInfoSync().pixelRatio
           const canvasWidth = res[0].width
           const canvasHeight = res[0].height
 
-          const ctx = canvasNode.getContext('2d')
+          const ctx = canvasNode.getContext('2d')//可以在dom对象上通过它的getContext方法来访问会话上下文
 
           const canvas = new WxCanvas(ctx, this.data.canvasId, true, canvasNode)
           echarts.setCanvasCreator(() => {
@@ -171,13 +172,13 @@ Component({
           }
         })
     },
-    canvasToTempFilePath(opt) {
+    canvasToTempFilePath(opt) {//参数是回调函数，包含成功和失败两种情况
       if (this.data.isUseNewCanvas) {
         // 新版
         const query = wx.createSelectorQuery().in(this)
         query
           .select('.ec-canvas')
-          .fields({ node: true, size: true })
+          .fields({ node: true, size: true })//fields返回的是nodesref对应的selectorQuery
           .exec(res => {
             const canvasNode = res[0].node
             opt.canvas = canvasNode
